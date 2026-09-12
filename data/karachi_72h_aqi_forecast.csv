@@ -1,0 +1,4 @@
+Horizon,Forecast_Date,Predicted_AQI,Category
+t+1 (24h),2026-08-31,161.2,Unhealthy (Red)
+t+2 (48h),2026-09-01,156.2,Unhealthy (Red)
+t+3 (72h),2026-09-02,157.6,Unhealthy (Red)
