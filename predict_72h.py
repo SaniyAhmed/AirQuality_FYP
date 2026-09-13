@@ -35,7 +35,14 @@ else:
         feature_cols = meta[horizon_key]["feature_cols"]
     else:
         raise ValueError("Could not extract 'feature_cols' from multi_horizon_metadata.json!")
+    
+# --- SAFETY FILTER: Remove leak-risk columns as a second line of defense ---
+def is_leak_risk(col_name: str) -> bool:
+    leaky_substrings = ["lead", "target_delta", "target_residual", "aqi_baseline", "res_roll"]
+    return any(s in col_name for s in leaky_substrings)
 
+feature_cols = [c for c in feature_cols if not is_leak_risk(c)]
+# --------------------------------------------------------------------------
 df = pd.read_parquet(data_path).sort_values("date").reset_index(drop=True)
 
 # Re-engineer required feature transformations

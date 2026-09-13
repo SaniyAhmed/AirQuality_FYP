@@ -34,8 +34,19 @@ for i in [1, 2, 3, 5, 7, 14]:
     df[f"target_aqi_log_lag{i}"] = df["target_aqi_log"].shift(i)
 
 # Feature selection
-exclude_cols = ["date", "target_aqi", "target_aqi_log", "target_log"]
-feature_cols = [c for c in df.columns if c not in exclude_cols and not c.startswith("target_lead")]
+BASE_EXCLUDE = ["date", "target_aqi", "target_aqi_log", "target_log"]
+
+def is_leak_risk(col_name: str) -> bool:
+    """Anything that could plausibly contain forward-looking / target-derived
+    information gets excluded from features, not just an exact-prefix match."""
+    leaky_substrings = ["lead", "target_delta", "target_residual", "aqi_baseline", "res_roll"]
+    return any(s in col_name for s in leaky_substrings)
+
+feature_cols = [c for c in df.columns if c not in BASE_EXCLUDE and not is_leak_risk(c)]
+
+removed = [c for c in df.columns if c not in feature_cols and c not in BASE_EXCLUDE]
+if removed:
+    print(f"[SAFETY FILTER] Excluded {len(removed)} leak-risk / legacy columns: {removed}")
 
 multi_metadata = {"feature_cols": feature_cols}
 
@@ -64,6 +75,7 @@ for h_name, lead_step in horizons:
     
     cv_r2_scores = []
     cv_mae_scores = []
+    baseline_r2_scores = []
     residuals = []
     
     for train_idx, val_idx in tscv.split(X):
@@ -80,15 +92,25 @@ for h_name, lead_step in horizons:
         
         actual_log = y_actual_log[val_idx]
         
+        # Persistence Baseline: Predict target_log_{t+k} = target_log_t (Delta = 0)
+        baseline_pred_log = y_current_log[val_idx]
+        
         # Evaluate on reconstructed log values
         cv_r2_scores.append(r2_score(actual_log, pred_log))
         cv_mae_scores.append(mean_absolute_error(actual_log, pred_log))
+        baseline_r2_scores.append(r2_score(actual_log, baseline_pred_log))
         residuals.extend(actual_log - pred_log)
     
     mean_r2 = np.mean(cv_r2_scores)
     mean_mae = np.mean(cv_mae_scores)
+    mean_baseline_r2 = np.mean(baseline_r2_scores)
+    
     print(f"Validation R2 Score: {mean_r2:.4f}")
     print(f"Validation MAE Score: {mean_mae:.4f}")
+    print(f"Persistence Baseline R2 Score: {mean_baseline_r2:.4f}")
+    
+    if mean_r2 <= mean_baseline_r2:
+        print(f"WARNING: Model {h_name} does not outperform persistence baseline!")
     
     # Calculate 95% Quantile Margin for Confidence Intervals
     q05 = float(np.quantile(residuals, 0.05))
@@ -106,6 +128,7 @@ for h_name, lead_step in horizons:
         "target_col": f"target_delta_lead{lead_step}",
         "honest_cv_r2_mean": float(mean_r2),
         "honest_cv_mae_mean": float(mean_mae),
+        "persistence_baseline_r2": float(mean_baseline_r2),
         "q05_margin": q05,
         "q95_margin": q95
     }
@@ -116,3 +139,17 @@ with open(meta_out_path, "w") as f:
     json.dump(multi_metadata, f, indent=4)
 
 print(f"\nSaved multi-horizon metadata to: {meta_out_path}")
+
+# Export persistence baseline summary CSV for academic reporting
+baseline_summary = pd.DataFrame([
+    {
+        "horizon": h,
+        "model_r2": multi_metadata[h]["honest_cv_r2_mean"],
+        "persistence_r2": multi_metadata[h]["persistence_baseline_r2"],
+        "beats_baseline": multi_metadata[h]["honest_cv_r2_mean"] > multi_metadata[h]["persistence_baseline_r2"]
+    }
+    for h in ["H1_24h", "H2_48h", "H3_72h"]
+])
+baseline_summary.to_csv(os.path.join(model_dir, "baseline_comparison.csv"), index=False)
+print("\nSaved baseline comparison to models/baseline_comparison.csv")
+print(baseline_summary.to_string(index=False))

@@ -15,6 +15,8 @@
         "est_no2_ppb",
         "aqi_pm25",
         "aqi_no2",
+        "aqi_baseline_log",
+        "target_residual_log",
         "sin_day",
         "cos_day",
         "sin_dow",
@@ -39,6 +41,16 @@
         "temp_2m_c_lag2",
         "temp_2m_c_lag3",
         "temp_2m_c_lag7",
+        "target_residual_log_lag1",
+        "target_residual_log_lag2",
+        "target_residual_log_lag3",
+        "target_residual_log_lag7",
+        "res_roll3_avg",
+        "res_roll7_avg",
+        "res_roll7_std",
+        "target_res_lead1",
+        "target_res_lead2",
+        "target_res_lead3",
         "ventilation_index",
         "stagnation_index",
         "wind_u_v_ratio",
@@ -101,28 +113,25 @@
     "H1_24h": {
         "model_path": "models\\ridge_delta_h1_24h.pkl",
         "target_col": "target_delta_lead1",
-        "honest_cv_r2_mean": 0.05833718914272401,
-        "honest_cv_mae_mean": 0.2410690829062807,
-        "persistence_baseline_r2": -0.23961853608401357,
-        "q05_margin": -0.5442634784033046,
-        "q95_margin": 0.5147388702646896
+        "honest_cv_r2_mean": 0.899425571619954,
+        "honest_cv_mae_mean": 0.07267433879222411,
+        "q05_margin": -0.14650921193837027,
+        "q95_margin": 0.17145420164724332
     },
     "H2_48h": {
         "model_path": "models\\ridge_delta_h2_48h.pkl",
         "target_col": "target_delta_lead2",
-        "honest_cv_r2_mean": -0.02256776411668058,
-        "honest_cv_mae_mean": 0.24820072995408982,
-        "persistence_baseline_r2": -0.3819935294314411,
-        "q05_margin": -0.5519277646686661,
-        "q95_margin": 0.5690678474745029
+        "honest_cv_r2_mean": 0.8912592824671928,
+        "honest_cv_mae_mean": 0.07433603853216386,
+        "q05_margin": -0.15113534005369836,
+        "q95_margin": 0.16815727349227153
     },
     "H3_72h": {
         "model_path": "models\\ridge_delta_h3_72h.pkl",
         "target_col": "target_delta_lead3",
-        "honest_cv_r2_mean": -0.3682477876085523,
-        "honest_cv_mae_mean": 0.252982073765517,
-        "persistence_baseline_r2": -0.5165011620584099,
-        "q05_margin": -0.5645598198303962,
-        "q95_margin": 0.5411385490000056
+        "honest_cv_r2_mean": 0.8841174140896758,
+        "honest_cv_mae_mean": 0.07748953490294523,
+        "q05_margin": -0.14410067256328232,
+        "q95_margin": 0.1912165897291505
     }
 }
